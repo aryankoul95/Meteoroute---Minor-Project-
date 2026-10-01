@@ -1,0 +1,61 @@
+import httpx
+from geopy.distance import geodesic
+
+async def get_osrm_route(start_lat: float, start_lon: float, end_lat: float, end_lon: float):
+    url = f"http://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+    route = data['routes'][0]
+    geometry = route['geometry']['coordinates']  # [[lon, lat], ...]
+    distance_km = route['distance'] / 1000.0
+    duration_hrs = route['duration'] / 3600.0
+    return geometry, distance_km, duration_hrs
+
+def sample_waypoints(geometry: list, target_interval_km: float, total_duration_hrs: float, total_distance_km: float):
+    sampled = []
+    accumulated_dist = 0.0
+    last_sampled_dist = 0.0
+
+    # Average speed in km/h to estimate ETA at each waypoint
+    avg_speed_kmh = total_distance_km / total_duration_hrs if total_duration_hrs > 0 else 60.0
+
+    # Add starting point
+    first_pt = geometry[0]
+    sampled.append({
+        "lat": first_pt[1],
+        "lon": first_pt[0],
+        "dist_km": 0.0,
+        "eta_min": 0.0
+    })
+
+    for i in range(1, len(geometry)):
+        prev_pt = (geometry[i-1][1], geometry[i-1][0])
+        curr_pt = (geometry[i][1], geometry[i][0])
+        
+        segment_dist = geodesic(prev_pt, curr_pt).km
+        accumulated_dist += segment_dist
+
+        if accumulated_dist - last_sampled_dist >= target_interval_km:
+            eta_minutes = (accumulated_dist / avg_speed_kmh) * 60.0
+            sampled.append({
+                "lat": curr_pt[0],
+                "lon": curr_pt[1],
+                "dist_km": round(accumulated_dist, 2),
+                "eta_min": round(eta_minutes, 1)
+            })
+            last_sampled_dist = accumulated_dist
+
+    # Always add destination point if not already added
+    last_pt = geometry[-1]
+    if not (sampled[-1]["lat"] == last_pt[1] and sampled[-1]["lon"] == last_pt[0]):
+        sampled.append({
+            "lat": last_pt[1],
+            "lon": last_pt[0],
+            "dist_km": round(total_distance_km, 2),
+            "eta_min": round(total_duration_hrs * 60.0, 1)
+        })
+
+    return sampled
