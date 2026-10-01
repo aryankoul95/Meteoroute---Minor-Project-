@@ -1,0 +1,37 @@
+services:
+
+  backend:
+    build: .
+    container_name: meteoroute-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://meteoroute:meteoroute@db:5432/meteoroute
+      OSRM_URL: http://osrm:5000
+    depends_on:
+      - db
+      - osrm
+
+  db:
+    image: postgis/postgis:17-3.5
+    container_name: meteoroute-postgis
+    environment:
+      POSTGRES_USER: meteoroute
+      POSTGRES_PASSWORD: meteoroute
+      POSTGRES_DB: meteoroute
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: meteoroute-osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./osrm-data:/data
+    command: ["osrm-routed", "--algorithm", "MLD", "/data/northern-zone.osrm"]
+
+volumes:
+  postgres-data:

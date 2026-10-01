@@ -8,3 +8,5 @@ venv/
 *.log
 dist/
 build/
+osrm-data/
+postgres-data/
