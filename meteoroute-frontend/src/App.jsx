@@ -43,10 +43,15 @@ export default function App() {
         total_distance_km: res.data.total_distance_km,
         total_duration_hours: res.data.total_duration_hours,
         total_waypoints_sampled: res.data.total_waypoints_sampled,
-        overall_route_risk_score: res.data.overall_route_risk_score,
-        high_risk_segments_count: res.data.high_risk_segments_count,
-        route_safety_status: res.data.route_safety_status,
+        total_segments: res.data.total_segments,
+        overall_route_risk_score:
+          res.data.overall_route_risk_score,
+        high_risk_segments_count:
+          res.data.high_risk_segments_count,
+        route_safety_status:
+          res.data.route_safety_status,
         waypoints: res.data.waypoints,
+        segments: res.data.segments,
       });
     } catch (err) {
       console.error(err);
@@ -157,16 +162,19 @@ export default function App() {
                 </h3>
 
                 <div className="text-xs text-gray-300">
-                  <strong>Language:</strong> {intentData.language}
+                  <strong>Language:</strong>{" "}
+                  {intentData.language}
                 </div>
 
                 <div className="text-xs text-gray-300">
-                  <strong>Intent:</strong> {intentData.intent}
+                  <strong>Intent:</strong>{" "}
+                  {intentData.intent}
                 </div>
 
                 {intentData.origin && (
                   <div className="text-xs text-gray-300">
-                    <strong>Origin:</strong> {intentData.origin}
+                    <strong>Origin:</strong>{" "}
+                    {intentData.origin}
                   </div>
                 )}
 
@@ -187,7 +195,10 @@ export default function App() {
             )}
 
             {/* Existing Coordinate Pipeline */}
-            <form onSubmit={handleRunPipeline} className="space-y-4">
+            <form
+              onSubmit={handleRunPipeline}
+              className="space-y-4"
+            >
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
                   Origin (Lat, Lon)
@@ -198,7 +209,9 @@ export default function App() {
                     type="number"
                     step="any"
                     value={startLat}
-                    onChange={(e) => setStartLat(e.target.value)}
+                    onChange={(e) =>
+                      setStartLat(e.target.value)
+                    }
                     placeholder="Lat"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -208,7 +221,9 @@ export default function App() {
                     type="number"
                     step="any"
                     value={startLon}
-                    onChange={(e) => setStartLon(e.target.value)}
+                    onChange={(e) =>
+                      setStartLon(e.target.value)
+                    }
                     placeholder="Lon"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -226,7 +241,9 @@ export default function App() {
                     type="number"
                     step="any"
                     value={endLat}
-                    onChange={(e) => setEndLat(e.target.value)}
+                    onChange={(e) =>
+                      setEndLat(e.target.value)
+                    }
                     placeholder="Lat"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -236,7 +253,9 @@ export default function App() {
                     type="number"
                     step="any"
                     value={endLon}
-                    onChange={(e) => setEndLon(e.target.value)}
+                    onChange={(e) =>
+                      setEndLon(e.target.value)
+                    }
                     placeholder="Lon"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -253,7 +272,9 @@ export default function App() {
                   type="number"
                   step="any"
                   value={intervalKm}
-                  onChange={(e) => setIntervalKm(e.target.value)}
+                  onChange={(e) =>
+                    setIntervalKm(e.target.value)
+                  }
                   className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />
@@ -323,6 +344,18 @@ export default function App() {
 
                 <div className="bg-gray-800/60 p-3 rounded-xl border border-gray-700/50">
                   <span className="text-[11px] text-gray-400 block">
+                    Route Segments
+                  </span>
+
+                  <span className="text-lg font-bold text-cyan-400">
+                    {routeData.total_segments ??
+                      routeData.segments?.length ??
+                      0}
+                  </span>
+                </div>
+
+                <div className="bg-gray-800/60 p-3 rounded-xl border border-gray-700/50 col-span-2">
+                  <span className="text-[11px] text-gray-400 block">
                     Overall Risk Score
                   </span>
 
@@ -334,7 +367,8 @@ export default function App() {
 
               <div
                 className={`p-3.5 rounded-xl border flex items-center justify-between ${
-                  routeData.route_safety_status === "SAFE"
+                  routeData.route_safety_status ===
+                  "SAFE"
                     ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                     : "bg-red-500/10 border-red-500/30 text-red-400"
                 }`}
@@ -344,7 +378,8 @@ export default function App() {
                 </span>
 
                 <span className="font-bold text-sm flex items-center gap-1">
-                  {routeData.route_safety_status === "SAFE" ? (
+                  {routeData.route_safety_status ===
+                  "SAFE" ? (
                     <CheckCircle2 className="w-4 h-4" />
                   ) : (
                     <AlertTriangle className="w-4 h-4" />
@@ -359,7 +394,10 @@ export default function App() {
 
         {/* Map */}
         <div className="lg:col-span-3 flex flex-col h-[calc(100vh-120px)] min-h-[500px]">
-          <RouteMap waypoints={routeData?.waypoints} />
+          <RouteMap
+            waypoints={routeData?.waypoints}
+            segments={routeData?.segments}
+          />
         </div>
       </main>
     </div>
