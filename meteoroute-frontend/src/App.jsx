@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import axios from "axios";
 import RouteMap from "./components/RouteMap";
 import {
@@ -19,6 +19,31 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [routeData, setRouteData] = useState(null);
   const [error, setError] = useState(null);
+  const [query, setQuery] = useState("");
+  const [intentData, setIntentData] = useState(null);
+  const [intentLoading, setIntentLoading] = useState(false);
+
+  const handleIntentExtraction = async (e) => {
+    e.preventDefault();
+    setIntentLoading(true);
+    setError(null);
+
+    try {
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/v1/intent",
+        {
+          query: query,
+        }
+      );
+
+      setIntentData(res.data);
+    } catch (err) {
+      console.error(err);
+      setError("Could not process the natural-language query.");
+    } finally {
+      setIntentLoading(false);
+    }
+  };
 
   const handleRunPipeline = async (e) => {
     e.preventDefault();
@@ -34,19 +59,19 @@ export default function App() {
           end_lat: parseFloat(endLat),
           end_lon: parseFloat(endLon),
           sampling_interval_km: parseFloat(intervalKm),
-        },
+        }
       );
+
       setRouteData(res.data);
     } catch (err) {
       console.error(err);
       setError(
-        "Could not connect to FastAPI server. Ensure uvicorn is running on port 8000.",
+        "Could not connect to FastAPI server. Ensure the backend is running on port 8000."
       );
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans">
       <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -75,7 +100,61 @@ export default function App() {
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2 text-gray-200">
               <Navigation className="w-4 h-4 text-blue-400" /> Route Coordinates
             </h2>
+            <form onSubmit={handleIntentExtraction} className="space-y-3 mb-5">
+  <label className="text-xs font-medium text-gray-400 mb-1 block">
+    Natural Language Query
+  </label>
 
+  <textarea
+    value={query}
+    onChange={(e) => setQuery(e.target.value)}
+    placeholder="e.g. I want to travel from Delhi to Srinagar tomorrow at 8 AM"
+    rows={3}
+    className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg p-3 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+    required
+  />
+
+  <button
+    type="submit"
+    disabled={intentLoading}
+    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-all disabled:opacity-50"
+  >
+    {intentLoading ? "Understanding Query..." : "Analyze Query"}
+  </button>
+</form>
+{intentData && (
+  <div className="bg-gray-800/60 border border-indigo-500/30 rounded-xl p-4 mb-5 space-y-2">
+    <h3 className="text-sm font-semibold text-indigo-400">
+      Intent Analysis
+    </h3>
+
+    <div className="text-xs text-gray-300">
+      <strong>Language:</strong> {intentData.language}
+    </div>
+
+    <div className="text-xs text-gray-300">
+      <strong>Intent:</strong> {intentData.intent}
+    </div>
+
+    {intentData.origin && (
+      <div className="text-xs text-gray-300">
+        <strong>Origin:</strong> {intentData.origin}
+      </div>
+    )}
+
+    {intentData.destination && (
+      <div className="text-xs text-gray-300">
+        <strong>Destination:</strong> {intentData.destination}
+      </div>
+    )}
+
+    {intentData.departure_time && (
+      <div className="text-xs text-gray-300">
+        <strong>Departure:</strong> {intentData.departure_time}
+      </div>
+    )}
+  </div>
+)}
             <form onSubmit={handleRunPipeline} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
@@ -236,3 +315,4 @@ export default function App() {
     </div>
   );
 }
+
