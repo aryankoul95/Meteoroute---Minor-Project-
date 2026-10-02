@@ -19,6 +19,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [routeData, setRouteData] = useState(null);
   const [error, setError] = useState(null);
+
   const [query, setQuery] = useState("");
   const [intentData, setIntentData] = useState(null);
   const [intentLoading, setIntentLoading] = useState(false);
@@ -30,16 +31,29 @@ export default function App() {
 
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/v1/intent",
+        "http://127.0.0.1:8000/api/v1/natural-route",
         {
           query: query,
         }
       );
 
-      setIntentData(res.data);
+      setIntentData(res.data.intent);
+
+      setRouteData({
+        total_distance_km: res.data.total_distance_km,
+        total_duration_hours: res.data.total_duration_hours,
+        total_waypoints_sampled: res.data.total_waypoints_sampled,
+        overall_route_risk_score: res.data.overall_route_risk_score,
+        high_risk_segments_count: res.data.high_risk_segments_count,
+        route_safety_status: res.data.route_safety_status,
+        waypoints: res.data.waypoints,
+      });
     } catch (err) {
       console.error(err);
-      setError("Could not process the natural-language query.");
+      setError(
+        err.response?.data?.detail ||
+          "Could not process the natural-language route."
+      );
     } finally {
       setIntentLoading(false);
     }
@@ -72,6 +86,7 @@ export default function App() {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans">
       <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -79,17 +94,20 @@ export default function App() {
           <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-xl">
             <Navigation className="w-6 h-6 text-blue-400" />
           </div>
+
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
               MeteoRoute
             </h1>
+
             <p className="text-[11px] text-gray-400">
               Spatiotemporal Weather Risk Dashboard
             </p>
           </div>
         </div>
+
         <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>{" "}
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           Backend Engine Connected
         </span>
       </header>
@@ -98,68 +116,83 @@ export default function App() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl">
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2 text-gray-200">
-              <Navigation className="w-4 h-4 text-blue-400" /> Route Coordinates
+              <Navigation className="w-4 h-4 text-blue-400" />
+              Route Coordinates
             </h2>
-            <form onSubmit={handleIntentExtraction} className="space-y-3 mb-5">
-  <label className="text-xs font-medium text-gray-400 mb-1 block">
-    Natural Language Query
-  </label>
 
-  <textarea
-    value={query}
-    onChange={(e) => setQuery(e.target.value)}
-    placeholder="e.g. I want to travel from Delhi to Srinagar tomorrow at 8 AM"
-    rows={3}
-    className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg p-3 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-    required
-  />
+            {/* Natural Language Route */}
+            <form
+              onSubmit={handleIntentExtraction}
+              className="space-y-3 mb-5"
+            >
+              <label className="text-xs font-medium text-gray-400 mb-1 block">
+                Natural Language Query
+              </label>
 
-  <button
-    type="submit"
-    disabled={intentLoading}
-    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-all disabled:opacity-50"
-  >
-    {intentLoading ? "Understanding Query..." : "Analyze Query"}
-  </button>
-</form>
-{intentData && (
-  <div className="bg-gray-800/60 border border-indigo-500/30 rounded-xl p-4 mb-5 space-y-2">
-    <h3 className="text-sm font-semibold text-indigo-400">
-      Intent Analysis
-    </h3>
+              <textarea
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="e.g. I want to travel from Delhi to Srinagar tomorrow at 8 AM"
+                rows={3}
+                className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg p-3 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                required
+              />
 
-    <div className="text-xs text-gray-300">
-      <strong>Language:</strong> {intentData.language}
-    </div>
+              <button
+                type="submit"
+                disabled={intentLoading}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-all disabled:opacity-50"
+              >
+                {intentLoading
+                  ? "Building Route..."
+                  : "Analyze Query"}
+              </button>
+            </form>
 
-    <div className="text-xs text-gray-300">
-      <strong>Intent:</strong> {intentData.intent}
-    </div>
+            {/* Intent Analysis */}
+            {intentData && (
+              <div className="bg-gray-800/60 border border-indigo-500/30 rounded-xl p-4 mb-5 space-y-2">
+                <h3 className="text-sm font-semibold text-indigo-400">
+                  Intent Analysis
+                </h3>
 
-    {intentData.origin && (
-      <div className="text-xs text-gray-300">
-        <strong>Origin:</strong> {intentData.origin}
-      </div>
-    )}
+                <div className="text-xs text-gray-300">
+                  <strong>Language:</strong> {intentData.language}
+                </div>
 
-    {intentData.destination && (
-      <div className="text-xs text-gray-300">
-        <strong>Destination:</strong> {intentData.destination}
-      </div>
-    )}
+                <div className="text-xs text-gray-300">
+                  <strong>Intent:</strong> {intentData.intent}
+                </div>
 
-    {intentData.departure_time && (
-      <div className="text-xs text-gray-300">
-        <strong>Departure:</strong> {intentData.departure_time}
-      </div>
-    )}
-  </div>
-)}
+                {intentData.origin && (
+                  <div className="text-xs text-gray-300">
+                    <strong>Origin:</strong> {intentData.origin}
+                  </div>
+                )}
+
+                {intentData.destination && (
+                  <div className="text-xs text-gray-300">
+                    <strong>Destination:</strong>{" "}
+                    {intentData.destination}
+                  </div>
+                )}
+
+                {intentData.departure_time && (
+                  <div className="text-xs text-gray-300">
+                    <strong>Departure:</strong>{" "}
+                    {intentData.departure_time}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Existing Coordinate Pipeline */}
             <form onSubmit={handleRunPipeline} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
                   Origin (Lat, Lon)
                 </label>
+
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
@@ -170,6 +203,7 @@ export default function App() {
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
+
                   <input
                     type="number"
                     step="any"
@@ -186,6 +220,7 @@ export default function App() {
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
                   Destination (Lat, Lon)
                 </label>
+
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
@@ -196,6 +231,7 @@ export default function App() {
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
+
                   <input
                     type="number"
                     step="any"
@@ -212,6 +248,7 @@ export default function App() {
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
                   Sampling Interval (km)
                 </label>
+
                 <input
                   type="number"
                   step="any"
@@ -231,8 +268,8 @@ export default function App() {
                   "Fetching Spatiotemporal Pipeline..."
                 ) : (
                   <>
-                    <Play className="w-4 h-4 fill-white" /> Compute Weather
-                    Route
+                    <Play className="w-4 h-4 fill-white" />
+                    Compute Weather Route
                   </>
                 )}
               </button>
@@ -245,11 +282,12 @@ export default function App() {
             )}
           </div>
 
+          {/* Route Summary */}
           {routeData && (
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl space-y-4">
               <h3 className="text-base font-semibold flex items-center gap-2 text-gray-200">
-                <ShieldAlert className="w-4 h-4 text-indigo-400" /> Route
-                Analysis Summary
+                <ShieldAlert className="w-4 h-4 text-indigo-400" />
+                Route Analysis Summary
               </h3>
 
               <div className="grid grid-cols-2 gap-3">
@@ -257,30 +295,37 @@ export default function App() {
                   <span className="text-[11px] text-gray-400 block">
                     Total Distance
                   </span>
+
                   <span className="text-lg font-bold text-gray-100">
                     {routeData.total_distance_km} km
                   </span>
                 </div>
+
                 <div className="bg-gray-800/60 p-3 rounded-xl border border-gray-700/50">
                   <span className="text-[11px] text-gray-400 block">
                     Est. Duration
                   </span>
+
                   <span className="text-lg font-bold text-gray-100">
                     {routeData.total_duration_hours} hrs
                   </span>
                 </div>
+
                 <div className="bg-gray-800/60 p-3 rounded-xl border border-gray-700/50">
                   <span className="text-[11px] text-gray-400 block">
                     Waypoints Sampled
                   </span>
+
                   <span className="text-lg font-bold text-blue-400">
                     {routeData.total_waypoints_sampled}
                   </span>
                 </div>
+
                 <div className="bg-gray-800/60 p-3 rounded-xl border border-gray-700/50">
                   <span className="text-[11px] text-gray-400 block">
                     Overall Risk Score
                   </span>
+
                   <span className="text-lg font-bold text-amber-400">
                     {routeData.overall_route_risk_score} / 100
                   </span>
@@ -294,13 +339,17 @@ export default function App() {
                     : "bg-red-500/10 border-red-500/30 text-red-400"
                 }`}
               >
-                <span className="text-xs font-medium">Safety Status</span>
+                <span className="text-xs font-medium">
+                  Safety Status
+                </span>
+
                 <span className="font-bold text-sm flex items-center gap-1">
                   {routeData.route_safety_status === "SAFE" ? (
                     <CheckCircle2 className="w-4 h-4" />
                   ) : (
                     <AlertTriangle className="w-4 h-4" />
                   )}
+
                   {routeData.route_safety_status}
                 </span>
               </div>
@@ -308,6 +357,7 @@ export default function App() {
           )}
         </div>
 
+        {/* Map */}
         <div className="lg:col-span-3 flex flex-col h-[calc(100vh-120px)] min-h-[500px]">
           <RouteMap waypoints={routeData?.waypoints} />
         </div>
@@ -315,4 +365,3 @@ export default function App() {
     </div>
   );
 }
-
