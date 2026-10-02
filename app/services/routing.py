@@ -1,17 +1,21 @@
-import httpx
+﻿import httpx
+import os
 from geopy.distance import geodesic
 
 async def get_osrm_route(start_lat: float, start_lon: float, end_lat: float, end_lon: float):
-    url = f"http://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson"
+    base_url = os.getenv("OSRM_URL", "http://localhost:5000")
+    url = f"{base_url}/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson"
+
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         response.raise_for_status()
         data = response.json()
 
-    route = data['routes'][0]
-    geometry = route['geometry']['coordinates']  # [[lon, lat], ...]
-    distance_km = route['distance'] / 1000.0
-    duration_hrs = route['duration'] / 3600.0
+    route = data["routes"][0]
+    geometry = route["geometry"]["coordinates"]
+    distance_km = route["distance"] / 1000.0
+    duration_hrs = route["duration"] / 3600.0
+
     return geometry, distance_km, duration_hrs
 
 def sample_waypoints(geometry: list, target_interval_km: float, total_duration_hrs: float, total_distance_km: float):
@@ -59,3 +63,4 @@ def sample_waypoints(geometry: list, target_interval_km: float, total_duration_h
         })
 
     return sampled
+
