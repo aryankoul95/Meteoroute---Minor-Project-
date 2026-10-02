@@ -1,6 +1,7 @@
 ﻿from fastapi import APIRouter, HTTPException
 
 from app.schemas.intent import IntentRequest
+
 from app.services.intent_extractor import (
     extract_travel_intent_llm,
 )
@@ -10,6 +11,7 @@ from app.services.geocoding import geocode_place
 from app.services.routing import (
     get_osrm_route,
     sample_waypoints,
+    build_route_segments,
 )
 
 from app.services.weather import (
@@ -62,7 +64,6 @@ async def natural_route(payload: IntentRequest):
         # -------------------------------------------------
 
         if intent.intent != "route_planning":
-
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -75,7 +76,6 @@ async def natural_route(payload: IntentRequest):
             not intent.origin
             or not intent.destination
         ):
-
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -93,7 +93,6 @@ async def natural_route(payload: IntentRequest):
         )
 
         if origin is None:
-
             raise HTTPException(
                 status_code=404,
                 detail=(
@@ -111,7 +110,6 @@ async def natural_route(payload: IntentRequest):
         )
 
         if destination is None:
-
             raise HTTPException(
                 status_code=404,
                 detail=(
@@ -170,9 +168,7 @@ async def natural_route(payload: IntentRequest):
         cap_alerts = []
 
         for xml_content in cap_xml_alerts:
-
             try:
-
                 parsed_alert = parse_cap_alert(
                     xml_content
                 )
@@ -196,18 +192,15 @@ async def natural_route(payload: IntentRequest):
         route_waypoints = []
 
         for weather in normalized_weather:
-
             route_waypoints.append(
                 {
                     "latitude": weather["latitude"],
                     "longitude": weather["longitude"],
-
                     "distance_from_start_km": (
                         weather[
                             "distance_from_start_km"
                         ]
                     ),
-
                     "estimated_arrival_minutes": (
                         weather[
                             "estimated_arrival_minutes"
@@ -238,52 +231,41 @@ async def natural_route(payload: IntentRequest):
             normalized_weather,
             matched_waypoints,
         ):
-
             combined_waypoints.append(
                 {
                     "latitude": weather["latitude"],
                     "longitude": weather["longitude"],
-
                     "distance_from_start_km": (
                         weather[
                             "distance_from_start_km"
                         ]
                     ),
-
                     "estimated_arrival_minutes": (
                         weather[
                             "estimated_arrival_minutes"
                         ]
                     ),
-
                     "forecast_time": (
                         weather["forecast_time"]
                     ),
-
                     "temperature_c": (
                         weather["temperature_c"]
                     ),
-
                     "wind_speed_kmh": (
                         weather["wind_speed_kmh"]
                     ),
-
                     "wind_gust_kmh": (
                         weather["wind_gust_kmh"]
                     ),
-
                     "precipitation_mm": (
                         weather["precipitation_mm"]
                     ),
-
                     "weather_code": (
                         weather["weather_code"]
                     ),
-
                     "weather_source": (
                         weather["source"]
                     ),
-
                     "cap_alerts": (
                         matched["cap_alerts"]
                     ),
@@ -309,7 +291,95 @@ async def natural_route(payload: IntentRequest):
         )
 
         # -------------------------------------------------
-        # STEP 15: Return final route response
+        # STEP 15: Build route segments
+        # -------------------------------------------------
+
+        segments = build_route_segments(
+            risk_result["waypoints"]
+        )
+
+        # -------------------------------------------------
+        # STEP 16: Attach risk information to segments
+        #
+        # Segment risk = maximum risk of its
+        # start/end waypoints.
+        # -------------------------------------------------
+
+        for segment in segments:
+
+            start_index = (
+                segment["segment_id"] - 1
+            )
+
+            end_index = (
+                segment["segment_id"]
+            )
+
+            start_waypoint = risk_result[
+                "waypoints"
+            ][start_index]
+
+            end_waypoint = risk_result[
+                "waypoints"
+            ][end_index]
+
+            start_score = float(
+                start_waypoint.get(
+                    "risk_score",
+                    0.0,
+                )
+            )
+
+            end_score = float(
+                end_waypoint.get(
+                    "risk_score",
+                    0.0,
+                )
+            )
+
+            if start_score >= end_score:
+                segment_score = start_score
+                segment_category = (
+                    start_waypoint.get(
+                        "risk_category",
+                        "LOW",
+                    )
+                )
+            else:
+                segment_score = end_score
+                segment_category = (
+                    end_waypoint.get(
+                        "risk_category",
+                        "LOW",
+                    )
+                )
+
+            hazards = []
+
+            for waypoint in (
+                start_waypoint,
+                end_waypoint,
+            ):
+                for hazard in waypoint.get(
+                    "hazards",
+                    [],
+                ):
+                    if hazard not in hazards:
+                        hazards.append(hazard)
+
+            segment["risk_score"] = round(
+                segment_score,
+                1,
+            )
+
+            segment["risk_category"] = (
+                segment_category
+            )
+
+            segment["hazards"] = hazards
+
+        # -------------------------------------------------
+        # STEP 17: Return final route response
         # -------------------------------------------------
 
         return {
@@ -331,6 +401,10 @@ async def natural_route(payload: IntentRequest):
 
             "total_waypoints_sampled": len(
                 risk_result["waypoints"]
+            ),
+
+            "total_segments": len(
+                segments
             ),
 
             "cap_alerts_fetched": len(
@@ -362,13 +436,14 @@ async def natural_route(payload: IntentRequest):
             "waypoints": (
                 risk_result["waypoints"]
             ),
+
+            "segments": segments,
         }
 
     except HTTPException:
         raise
 
     except Exception as e:
-
         raise HTTPException(
             status_code=500,
             detail=str(e),
