@@ -34,22 +34,23 @@ export default function App() {
         "http://127.0.0.1:8000/api/v1/natural-route",
         {
           query: query,
-        }
+        },
       );
 
       setIntentData(res.data.intent);
+      setStartLat(res.data.origin_coordinates.latitude);
+      setStartLon(res.data.origin_coordinates.longitude);
+      setEndLat(res.data.destination_coordinates.latitude);
+      setEndLon(res.data.destination_coordinates.longitude);
 
       setRouteData({
         total_distance_km: res.data.total_distance_km,
         total_duration_hours: res.data.total_duration_hours,
         total_waypoints_sampled: res.data.total_waypoints_sampled,
         total_segments: res.data.total_segments,
-        overall_route_risk_score:
-          res.data.overall_route_risk_score,
-        high_risk_segments_count:
-          res.data.high_risk_segments_count,
-        route_safety_status:
-          res.data.route_safety_status,
+        overall_route_risk_score: res.data.overall_route_risk_score,
+        high_risk_segments_count: res.data.high_risk_segments_count,
+        route_safety_status: res.data.route_safety_status,
         waypoints: res.data.waypoints,
         segments: res.data.segments,
       });
@@ -57,7 +58,7 @@ export default function App() {
       console.error(err);
       setError(
         err.response?.data?.detail ||
-          "Could not process the natural-language route."
+          "Could not process the natural-language route.",
       );
     } finally {
       setIntentLoading(false);
@@ -78,14 +79,14 @@ export default function App() {
           end_lat: parseFloat(endLat),
           end_lon: parseFloat(endLon),
           sampling_interval_km: parseFloat(intervalKm),
-        }
+        },
       );
 
       setRouteData(res.data);
     } catch (err) {
       console.error(err);
       setError(
-        "Could not connect to FastAPI server. Ensure the backend is running on port 8000."
+        "Could not connect to FastAPI server. Ensure the backend is running on port 8000.",
       );
     } finally {
       setLoading(false);
@@ -126,10 +127,7 @@ export default function App() {
             </h2>
 
             {/* Natural Language Route */}
-            <form
-              onSubmit={handleIntentExtraction}
-              className="space-y-3 mb-5"
-            >
+            <form onSubmit={handleIntentExtraction} className="space-y-3 mb-5">
               <label className="text-xs font-medium text-gray-400 mb-1 block">
                 Natural Language Query
               </label>
@@ -148,9 +146,7 @@ export default function App() {
                 disabled={intentLoading}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-all disabled:opacity-50"
               >
-                {intentLoading
-                  ? "Building Route..."
-                  : "Analyze Query"}
+                {intentLoading ? "Building Route..." : "Analyze Query"}
               </button>
             </form>
 
@@ -162,43 +158,35 @@ export default function App() {
                 </h3>
 
                 <div className="text-xs text-gray-300">
-                  <strong>Language:</strong>{" "}
-                  {intentData.language}
+                  <strong>Language:</strong> {intentData.language}
                 </div>
 
                 <div className="text-xs text-gray-300">
-                  <strong>Intent:</strong>{" "}
-                  {intentData.intent}
+                  <strong>Intent:</strong> {intentData.intent}
                 </div>
 
                 {intentData.origin && (
                   <div className="text-xs text-gray-300">
-                    <strong>Origin:</strong>{" "}
-                    {intentData.origin}
+                    <strong>Origin:</strong> {intentData.origin}
                   </div>
                 )}
 
                 {intentData.destination && (
                   <div className="text-xs text-gray-300">
-                    <strong>Destination:</strong>{" "}
-                    {intentData.destination}
+                    <strong>Destination:</strong> {intentData.destination}
                   </div>
                 )}
 
                 {intentData.departure_time && (
                   <div className="text-xs text-gray-300">
-                    <strong>Departure:</strong>{" "}
-                    {intentData.departure_time}
+                    <strong>Departure:</strong> {intentData.departure_time}
                   </div>
                 )}
               </div>
             )}
 
             {/* Existing Coordinate Pipeline */}
-            <form
-              onSubmit={handleRunPipeline}
-              className="space-y-4"
-            >
+            <form onSubmit={handleRunPipeline} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
                   Origin (Lat, Lon)
@@ -209,9 +197,7 @@ export default function App() {
                     type="number"
                     step="any"
                     value={startLat}
-                    onChange={(e) =>
-                      setStartLat(e.target.value)
-                    }
+                    onChange={(e) => setStartLat(e.target.value)}
                     placeholder="Lat"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -221,9 +207,7 @@ export default function App() {
                     type="number"
                     step="any"
                     value={startLon}
-                    onChange={(e) =>
-                      setStartLon(e.target.value)
-                    }
+                    onChange={(e) => setStartLon(e.target.value)}
                     placeholder="Lon"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -241,9 +225,7 @@ export default function App() {
                     type="number"
                     step="any"
                     value={endLat}
-                    onChange={(e) =>
-                      setEndLat(e.target.value)
-                    }
+                    onChange={(e) => setEndLat(e.target.value)}
                     placeholder="Lat"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -253,9 +235,7 @@ export default function App() {
                     type="number"
                     step="any"
                     value={endLon}
-                    onChange={(e) =>
-                      setEndLon(e.target.value)
-                    }
+                    onChange={(e) => setEndLon(e.target.value)}
                     placeholder="Lon"
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
@@ -272,9 +252,7 @@ export default function App() {
                   type="number"
                   step="any"
                   value={intervalKm}
-                  onChange={(e) =>
-                    setIntervalKm(e.target.value)
-                  }
+                  onChange={(e) => setIntervalKm(e.target.value)}
                   className="w-full bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   required
                 />
@@ -367,19 +345,15 @@ export default function App() {
 
               <div
                 className={`p-3.5 rounded-xl border flex items-center justify-between ${
-                  routeData.route_safety_status ===
-                  "SAFE"
+                  routeData.route_safety_status?.toUpperCase() === "SAFE"
                     ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                     : "bg-red-500/10 border-red-500/30 text-red-400"
                 }`}
               >
-                <span className="text-xs font-medium">
-                  Safety Status
-                </span>
+                <span className="text-xs font-medium">Safety Status</span>
 
                 <span className="font-bold text-sm flex items-center gap-1">
-                  {routeData.route_safety_status ===
-                  "SAFE" ? (
+                  {routeData.route_safety_status?.toUpperCase() === "SAFE" ? (
                     <CheckCircle2 className="w-4 h-4" />
                   ) : (
                     <AlertTriangle className="w-4 h-4" />

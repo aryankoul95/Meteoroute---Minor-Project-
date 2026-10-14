@@ -38,13 +38,11 @@ export default function RouteMap({ waypoints, segments }) {
   if (!waypoints || waypoints.length === 0) {
     return (
       <div className="w-full h-full min-h-[450px] flex flex-col items-center justify-center bg-gray-900 border border-gray-800 rounded-2xl text-gray-400 p-6 text-center">
-        <p className="text-base font-medium">
-          No active route rendered
-        </p>
+        <p className="text-base font-medium">No active route rendered</p>
 
         <p className="text-xs text-gray-500 mt-1">
-          Submit a natural-language travel query to visualize the
-          weather-aware route.
+          Submit a natural-language travel query to visualize the weather-aware
+          route.
         </p>
       </div>
     );
@@ -56,15 +54,11 @@ export default function RouteMap({ waypoints, segments }) {
    * If segment data is available, draw every segment
    * using its calculated risk category.
    */
-  const hasSegments =
-    Array.isArray(segments) && segments.length > 0;
+  const hasSegments = Array.isArray(segments) && segments.length > 0;
 
   return (
     <MapContainer
-      center={[
-        startPt.latitude,
-        startPt.longitude,
-      ]}
+      center={[startPt.latitude, startPt.longitude]}
       zoom={7}
       scrollWheelZoom={true}
       className="w-full h-full min-h-[450px] rounded-2xl shadow-2xl border border-gray-800"
@@ -80,17 +74,15 @@ export default function RouteMap({ waypoints, segments }) {
             key={segment.segment_id}
             positions={[
               [
-                segment.start.lat,
-                segment.start.lon,
+                segment.start_lat ?? segment.start?.lat,
+                segment.start_lon ?? segment.start?.lon,
               ],
               [
-                segment.end.lat,
-                segment.end.lon,
+                segment.end_lat ?? segment.end?.lat,
+                segment.end_lon ?? segment.end?.lon,
               ],
             ]}
-            color={getRiskColor(
-              segment.risk_category
-            )}
+            color={getRiskColor(segment.risk_category)}
             weight={6}
             opacity={0.9}
           >
@@ -101,14 +93,12 @@ export default function RouteMap({ waypoints, segments }) {
                 </p>
 
                 <p>
-                  <strong>Distance:</strong>{" "}
-                  {segment.distance_km} km
+                  <strong>Distance:</strong> {segment.distance_km} km
                 </p>
 
                 <p>
-                  <strong>ETA:</strong>{" "}
-                  +{segment.start_eta_min} →{" "}
-                  +{segment.end_eta_min} mins
+                  <strong>ETA:</strong> +{segment.start_eta_min} → +
+                  {segment.end_eta_min} mins
                 </p>
 
                 <hr className="my-1 border-gray-300" />
@@ -116,19 +106,15 @@ export default function RouteMap({ waypoints, segments }) {
                 <p
                   className="font-semibold"
                   style={{
-                    color: getRiskColor(
-                      segment.risk_category
-                    ),
+                    color: getRiskColor(segment.risk_category),
                   }}
                 >
-                  Risk: {segment.risk_category} (
-                  {segment.risk_score}/100)
+                  Risk: {segment.risk_category} ({segment.risk_score}/100)
                 </p>
 
                 <p className="text-[10px] text-gray-600 italic">
                   Hazards:{" "}
-                  {segment.hazards &&
-                  segment.hazards.length > 0
+                  {segment.hazards && segment.hazards.length > 0
                     ? segment.hazards.join(", ")
                     : "None detected"}
                 </p>
@@ -141,10 +127,7 @@ export default function RouteMap({ waypoints, segments }) {
          * Fallback for older route responses.
          */
         <Polyline
-          positions={waypoints.map((pt) => [
-            pt.latitude,
-            pt.longitude,
-          ])}
+          positions={waypoints.map((pt) => [pt.latitude, pt.longitude])}
           color="#3b82f6"
           weight={5}
           opacity={0.85}
@@ -154,13 +137,8 @@ export default function RouteMap({ waypoints, segments }) {
       {waypoints.map((pt, idx) => (
         <Marker
           key={idx}
-          position={[
-            pt.latitude,
-            pt.longitude,
-          ]}
-          icon={createRiskMarkerIcon(
-            pt.risk_category
-          )}
+          position={[pt.latitude, pt.longitude]}
+          icon={createRiskMarkerIcon(pt.risk_category)}
         >
           <Popup>
             <div className="text-gray-900 text-xs p-1 space-y-1">
@@ -169,13 +147,11 @@ export default function RouteMap({ waypoints, segments }) {
               </p>
 
               <p>
-                <strong>Distance:</strong>{" "}
-                {pt.distance_from_start_km} km
+                <strong>Distance:</strong> {pt.distance_from_start_km} km
               </p>
 
               <p>
-                <strong>ETA:</strong>{" "}
-                +{pt.estimated_arrival_minutes} mins
+                <strong>ETA:</strong> +{pt.estimated_arrival_minutes} mins
               </p>
 
               <hr className="my-1 border-gray-300" />
@@ -186,31 +162,26 @@ export default function RouteMap({ waypoints, segments }) {
               </p>
 
               <p>
-                <strong>Wind:</strong>{" "}
-                {pt.wind_speed_kmh ?? "N/A"} km/h
+                <strong>Wind:</strong> {pt.wind_speed_kmh ?? "N/A"} km/h
               </p>
 
               <p>
-                <strong>Precipitation:</strong>{" "}
-                {pt.precipitation_mm ?? "N/A"} mm
+                <strong>Precipitation:</strong> {pt.precipitation_mm ?? "N/A"}{" "}
+                mm
               </p>
 
               <p
                 className="font-semibold text-xs mt-1"
                 style={{
-                  color: getRiskColor(
-                    pt.risk_category
-                  ),
+                  color: getRiskColor(pt.risk_category),
                 }}
               >
-                Risk: {pt.risk_category} (
-                {pt.risk_score}/100)
+                Risk: {pt.risk_category} ({pt.risk_score}/100)
               </p>
 
               <p className="text-[10px] text-gray-600 italic">
                 Hazards:{" "}
-                {pt.hazards &&
-                pt.hazards.length > 0
+                {pt.hazards && pt.hazards.length > 0
                   ? pt.hazards.join(", ")
                   : "None detected"}
               </p>

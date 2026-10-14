@@ -21,11 +21,14 @@ class WaypointWeatherRisk(BaseModel):
     risk_category: str
     hazards: List[str]
 
+
 class RouteResponse(BaseModel):
     total_distance_km: float
     total_duration_hours: float
     total_waypoints_sampled: int
+    total_segments: int = 0
     overall_route_risk_score: float
     high_risk_segments_count: int
     route_safety_status: str
     waypoints: List[WaypointWeatherRisk]
+    segments: List[dict] = Field(default_factory=list)
