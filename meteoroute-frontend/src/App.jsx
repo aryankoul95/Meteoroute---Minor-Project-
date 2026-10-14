@@ -7,9 +7,21 @@ import {
   AlertTriangle,
   CheckCircle2,
   Play,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export default function App() {
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("meteoroute-theme") || "dark",
+  );
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("meteoroute-theme", nextTheme);
+  };
+
   const [startLat, setStartLat] = useState(28.6139);
   const [startLon, setStartLon] = useState(77.209);
   const [endLat, setEndLat] = useState(26.9124);
@@ -32,9 +44,7 @@ export default function App() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/v1/natural-route",
-        {
-          query: query,
-        },
+        { query },
       );
 
       setIntentData(res.data.intent);
@@ -94,7 +104,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans">
+    <div
+      className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans"
+      data-theme={theme}
+    >
       <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-xl">
@@ -105,17 +118,32 @@ export default function App() {
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
               MeteoRoute
             </h1>
-
             <p className="text-[11px] text-gray-400">
               Spatiotemporal Weather Risk Dashboard
             </p>
           </div>
         </div>
 
-        <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Backend Engine Connected
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            className="theme-toggle p-2 rounded-lg border border-gray-700 transition-colors"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5 text-amber-400" />
+            ) : (
+              <Moon className="w-5 h-5 text-indigo-600" />
+            )}
+          </button>
+
+          <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Backend Engine Connected
+          </span>
+        </div>
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 max-w-[1800px] w-full mx-auto">
@@ -126,7 +154,6 @@ export default function App() {
               Route Coordinates
             </h2>
 
-            {/* Natural Language Route */}
             <form onSubmit={handleIntentExtraction} className="space-y-3 mb-5">
               <label className="text-xs font-medium text-gray-400 mb-1 block">
                 Natural Language Query
@@ -150,7 +177,6 @@ export default function App() {
               </button>
             </form>
 
-            {/* Intent Analysis */}
             {intentData && (
               <div className="bg-gray-800/60 border border-indigo-500/30 rounded-xl p-4 mb-5 space-y-2">
                 <h3 className="text-sm font-semibold text-indigo-400">
@@ -160,7 +186,6 @@ export default function App() {
                 <div className="text-xs text-gray-300">
                   <strong>Language:</strong> {intentData.language}
                 </div>
-
                 <div className="text-xs text-gray-300">
                   <strong>Intent:</strong> {intentData.intent}
                 </div>
@@ -185,7 +210,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Existing Coordinate Pipeline */}
             <form onSubmit={handleRunPipeline} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1 block">
@@ -202,7 +226,6 @@ export default function App() {
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
-
                   <input
                     type="number"
                     step="any"
@@ -230,7 +253,6 @@ export default function App() {
                     className="bg-gray-800 border border-gray-700 text-sm rounded-lg p-2.5 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   />
-
                   <input
                     type="number"
                     step="any"
@@ -281,7 +303,6 @@ export default function App() {
             )}
           </div>
 
-          {/* Route Summary */}
           {routeData && (
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl space-y-4">
               <h3 className="text-base font-semibold flex items-center gap-2 text-gray-200">
@@ -294,7 +315,6 @@ export default function App() {
                   <span className="text-[11px] text-gray-400 block">
                     Total Distance
                   </span>
-
                   <span className="text-lg font-bold text-gray-100">
                     {routeData.total_distance_km} km
                   </span>
@@ -304,7 +324,6 @@ export default function App() {
                   <span className="text-[11px] text-gray-400 block">
                     Est. Duration
                   </span>
-
                   <span className="text-lg font-bold text-gray-100">
                     {routeData.total_duration_hours} hrs
                   </span>
@@ -314,7 +333,6 @@ export default function App() {
                   <span className="text-[11px] text-gray-400 block">
                     Waypoints Sampled
                   </span>
-
                   <span className="text-lg font-bold text-blue-400">
                     {routeData.total_waypoints_sampled}
                   </span>
@@ -324,7 +342,6 @@ export default function App() {
                   <span className="text-[11px] text-gray-400 block">
                     Route Segments
                   </span>
-
                   <span className="text-lg font-bold text-cyan-400">
                     {routeData.total_segments ??
                       routeData.segments?.length ??
@@ -336,7 +353,6 @@ export default function App() {
                   <span className="text-[11px] text-gray-400 block">
                     Overall Risk Score
                   </span>
-
                   <span className="text-lg font-bold text-amber-400">
                     {routeData.overall_route_risk_score} / 100
                   </span>
@@ -351,14 +367,12 @@ export default function App() {
                 }`}
               >
                 <span className="text-xs font-medium">Safety Status</span>
-
                 <span className="font-bold text-sm flex items-center gap-1">
                   {routeData.route_safety_status?.toUpperCase() === "SAFE" ? (
                     <CheckCircle2 className="w-4 h-4" />
                   ) : (
                     <AlertTriangle className="w-4 h-4" />
                   )}
-
                   {routeData.route_safety_status}
                 </span>
               </div>
@@ -366,7 +380,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Map */}
         <div className="lg:col-span-3 flex flex-col h-[calc(100vh-120px)] min-h-[500px]">
           <RouteMap
             waypoints={routeData?.waypoints}
